@@ -9,8 +9,6 @@ ScraperBot is an AI-powered chatbot that leverages a Deep Seek model integrated 
 - [Installation](#installation)
 - [Deployment](#deployment)
 - [Usage](#usage)
-- [Environment Variables](#environment-variables)
-- [Contributing](#contributing)
 
 ## Overview
 
@@ -76,3 +74,19 @@ The primary application file is `main.py` and all required libraries are listed 
      ```bash
      streamlit run main.py
      ```
+## Usage
+
+### Scraping a Website
+- **Enter a valid website URL** in the provided input field.
+- Click **"Scrape Website"** to extract text from the page.
+
+### Processing a PDF
+- **Upload a PDF file** using the file uploader.
+- Click **"Process PDF"** to extract and clean the text.
+
+### Chat Interface
+- Once the content is processed, use the **chat interface** to ask questions.
+- The AI responds with information solely based on the scraped or processed content.
+
+### Clear Everything
+- Use the **"Clear Everything"** button to reset the application and start fresh.

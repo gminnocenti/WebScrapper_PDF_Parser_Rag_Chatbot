@@ -9,17 +9,36 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
 import pdfplumber
 
-# Load environment variables
-load_dotenv()
-api_key: str = os.getenv('key')  # Ensure your API key is in .env as 'key=your_api_key_here'
-
-# Initialize model
-model: str = "deepseek-r1-distill-llama-70b"
-deepseek = ChatGroq(api_key=api_key, model_name=model)
-
-# Attach parser to the model
-parser = StrOutputParser()
-deepseek_chain = deepseek | parser
+# Function to initialize Groq model and chain
+def initialize_groq_chain(model_name: str = "deepseek-r1-distill-llama-70b") -> tuple[ChatGroq, StrOutputParser, callable]:
+    """
+    Initialize the Groq model and chain with environment variables.
+    
+    Args:
+        model_name (str): The name of the Groq model to use. Defaults to "deepseek-r1-distill-llama-70b".
+    
+    Returns:
+        tuple: (deepseek model, parser, deepseek_chain)
+    
+    Raises:
+        ValueError: If the API key is not found in the environment variables.
+    """
+    # Load environment variables from .env file
+    load_dotenv()
+    
+    # Retrieve the API key
+    api_key = os.getenv('key')
+    if not api_key:
+        raise ValueError("API key not found. Please ensure 'key' is set in your .env file as 'key=your_api_key_here'.")
+    
+    # Initialize the Groq model
+    deepseek = ChatGroq(api_key=api_key, model_name=model_name)
+    
+    # Attach parser to the model
+    parser = StrOutputParser()
+    deepseek_chain = deepseek | parser
+    
+    return deepseek, parser, deepseek_chain
 
 # Web scraping function
 def scrape_website(url):
@@ -65,7 +84,7 @@ def initialize_chain(scraped_data):
     Context: {context}
     Question: {question}
     """
-    return deepseek_chain, scraped_data, template
+    return scraped_data, template
 
 def main():
     st.set_page_config(
@@ -97,6 +116,14 @@ def main():
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
+    # Initialize the Groq chain if not already done
+    if "chain" not in st.session_state or st.session_state.chain is None:
+        try:
+            deepseek, parser, st.session_state.chain = initialize_groq_chain()
+        except ValueError as e:
+            st.error(str(e))
+            return
+
     # Clear Everything button
     if st.button("Clear Everything"):
         st.session_state.scraped_data = None
@@ -120,7 +147,7 @@ def main():
                     st.error(error)
                 elif scraped_data:
                     st.session_state.scraped_data = scraped_data
-                    st.session_state.chain, st.session_state.data, st.session_state.template = initialize_chain(scraped_data)
+                    st.session_state.data, st.session_state.template = initialize_chain(scraped_data)
                     st.success(f"Successfully scraped content from {url}! You can now ask questions.")
     
     else:  # PDF Upload
@@ -132,7 +159,7 @@ def main():
                     st.error(error)
                 elif scraped_data:
                     st.session_state.scraped_data = scraped_data
-                    st.session_state.chain, st.session_state.data, st.session_state.template = initialize_chain(scraped_data)
+                    st.session_state.data, st.session_state.template = initialize_chain(scraped_data)
                     st.success(f"Successfully processed {uploaded_file.name}! You can now ask questions.")
 
     # Display chat interface only if content has been scraped
